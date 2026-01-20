@@ -1,59 +1,89 @@
-# BMAD Skills & Workflows
+# Archon Context Management for Claude Code
 
-Collection of productivity workflows for Claude Code with BMAD agent system.
+Hooks et commandes pour la gestion automatique du contexte Claude Code avec intégration Archon MCP.
 
-## Workflows
+## Fonctionnalités
 
-### 1. Session Continue (`/session-continue`)
+- **Hooks automatiques** - Déclenchement sur PreCompact, SessionStart, Stop
+- **Commandes slash** - /update, /followup, /followup_doctor
+- **Intégration Archon MCP** - Synchronisation des tâches
+- **project-state.xml** - État persistant du projet
 
-Prepare session handoff with context preservation.
+## Structure
 
-**Triggers:**
-- `/compact&continue` - Save context, update docs/Archon, then compact
-- `/clear&continue` - Save context, update docs/Archon, then clear
-- `/session-continue` - Manual trigger (asks which mode)
-
-**Features:**
-- Saves session state to XML file
-- Updates PROGRESS.md with session summary
-- Syncs task status with Archon
-- Auto-resume on next session start
-
-### 2. Auto-Clear (`/auto-clear`)
-
-Automatically trigger context management when reaching threshold.
-
-**Triggers:**
-- `/auto-clear 80` - Trigger at 80% context usage
-- `/auto-clear 90` - Trigger at 90% context usage (default)
-- `/auto-clear` - Uses default 90% threshold
-
-**Features:**
-- Monitors context window usage
-- Warns user when approaching threshold
-- Executes session-continue workflow automatically
-- Configurable threshold (80% or 90%)
-
-## Installation
-
-1. Copy workflow files to your project's `_bmad/bmm/workflows/` directory
-2. Update `_bmad/_config/workflow-manifest.csv` with new entries
-3. Add Session Continuity section to your `CLAUDE.md`
-
-### Workflow Manifest Entries
-
-```csv
-"session-continue","Prepare session handoff with documentation update, Archon sync, and XML launch prompt","bmm","_bmad/bmm/workflows/session-continue/workflow.md"
-"compact-continue","Alias for session-continue in COMPACT mode","bmm","_bmad/bmm/workflows/session-continue/workflow.md"
-"clear-continue","Alias for session-continue in CLEAR mode","bmm","_bmad/bmm/workflows/session-continue/workflow.md"
-"auto-clear","Auto-trigger context management at configurable threshold","bmm","_bmad/bmm/workflows/auto-clear/workflow.md"
+```
+bmad-skills/
+├── hooks/                        # Scripts PowerShell pour Claude Code
+│   ├── context-manager.ps1       # Gestionnaire principal
+│   ├── precompact-handler.ps1    # Handler PreCompact
+│   └── session-start-handler.ps1 # Handler SessionStart
+├── commands/                     # Slash commands
+│   ├── update.md                 # /update
+│   ├── followup.md               # /followup
+│   └── followup_doctor.md        # /followup_doctor
+├── settings-template.json        # Configuration hooks
+├── _archive/                     # Ancien contenu (BMAD workflows)
+└── README.md
 ```
 
-## Requirements
+## Installation Rapide
 
-- BMAD agent system installed
-- Archon MCP server (optional, for task sync)
-- Claude Code CLI
+### 1. Hooks (global)
+
+```powershell
+# Créer le dossier
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\hooks"
+
+# Copier les scripts
+Copy-Item .\hooks\*.ps1 "$env:USERPROFILE\.claude\hooks\"
+```
+
+### 2. Commandes (par projet)
+
+```powershell
+# Dans votre projet
+New-Item -ItemType Directory -Force -Path ".claude\commands"
+Copy-Item .\commands\*.md ".claude\commands\"
+```
+
+### 3. Configuration
+
+Fusionner `settings-template.json` dans `~/.claude/settings.json`
+
+## Commandes
+
+| Commande | Description |
+|----------|-------------|
+| `/update` | Synchronise Archon MCP et project-state.xml |
+| `/followup` | Affiche l'état actuel du projet |
+| `/followup_doctor` | Diagnostic de cohérence complet |
+
+## Séquence Auto-Context
+
+Quand le contexte atteint sa limite :
+
+```
+1. PreCompact hook → Rappel /update + /followup_doctor
+2. Compactage automatique
+3. SessionStart hook → Rappel /followup
+```
+
+## Configuration Requise
+
+- Claude Code CLI avec support hooks
+- PowerShell (Windows)
+- Archon MCP Server (optionnel mais recommandé)
+- Fichier project-state.xml dans votre projet
+
+## Personnalisation
+
+Dans les fichiers `commands/*.md`, remplacez :
+- `YOUR_PROJECT_ID` → Votre Archon Project ID
+- `YOUR_PROJECT_PATH` → Chemin vers votre projet
+
+## Archive
+
+Les anciens workflows BMAD (session-continue, auto-clear) sont dans `_archive/`.
 
 ## License
 
