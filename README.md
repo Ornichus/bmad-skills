@@ -1,127 +1,154 @@
-# Archon Context Management for Claude Code
+# Claude Code Skills & Hooks
 
-Hooks, commandes et skills pour la gestion automatique du contexte Claude Code avec integration Archon MCP.
+Collection de skills (commandes) et hooks personnalisés pour Claude Code, optimisés pour la gestion de projet avec Archon MCP.
 
-## Fonctionnalites
+## Architecture du Système de Contexte
 
-- **Hooks automatiques** - Declenchement sur PreCompact, SessionStart, Stop
-- **Commandes slash** - /update, /followup, /followup_doctor
-- **Skills Claude Code** - agent-browser pour l'automatisation navigateur
-- **Integration Archon MCP** - Synchronisation des taches
-- **project-state.xml** - Etat persistant du projet
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    FLUX DE DONNÉES                          │
+├─────────────────────────────────────────────────────────────┤
+│  Claude Code API                                            │
+│       │                                                     │
+│       ▼                                                     │
+│  statusline.ps1 ──► context-level.txt (ex: "44")           │
+│       │                     │                               │
+│       ▼                     ▼                               │
+│  [Affichage]         stop-handler.ps1                       │
+│  "Model | Context:         │                                │
+│   [########----] 44%"      ▼                                │
+│                      Si >= 90% ?                            │
+│                      ├─ NON → Message standard              │
+│                      └─ OUI → ALERTE CRITIQUE               │
+│                              "Faites /update + /compact"    │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## Structure
 
 ```
-bmad-skills/
-├── hooks/                        # Scripts PowerShell pour Claude Code
-│   ├── context-manager.ps1       # Gestionnaire principal
-│   ├── precompact-handler.ps1    # Handler PreCompact
-│   └── session-start-handler.ps1 # Handler SessionStart
-├── commands/                     # Slash commands
-│   ├── update.md                 # /update
-│   ├── followup.md               # /followup
-│   └── followup_doctor.md        # /followup_doctor
-├── skills/                       # Skills Claude Code
-│   └── agent-browser/            # Automatisation navigateur
-│       ├── SKILL.md              # Skill pour Claude Code
-│       └── DOCUMENTATION.md      # Documentation complete
-├── settings-template.json        # Configuration hooks
-├── _archive/                     # Ancien contenu (BMAD workflows)
+claude-code-skills/
+├── hooks/                       # Scripts PowerShell pour hooks Claude Code
+│   ├── statusline.ps1           # Affichage + écrit context-level.txt
+│   ├── stop-handler.ps1         # Alerte conditionnelle selon % contexte
+│   ├── precompact-handler.ps1   # Handler pour PreCompact (100%)
+│   ├── session-start-handler.ps1  # Handler pour SessionStart
+│   └── context-manager.ps1      # (Legacy) Gestionnaire centralisé
+├── commands/                    # Slash commands personnalisées
+│   ├── update.md                # /update - Synchronise Archon MCP
+│   ├── followup.md              # /followup - Affiche l'état du projet
+│   └── followup_doctor.md       # /followup_doctor - Diagnostic
+├── settings-template.json       # Template de configuration hooks
 └── README.md
 ```
 
-## Installation Rapide
+## Installation
 
-### 1. Hooks (global)
+### 1. Copier les hooks
 
 ```powershell
-# Creer le dossier
+# Créer le dossier hooks
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\hooks"
 
 # Copier les scripts
 Copy-Item .\hooks\*.ps1 "$env:USERPROFILE\.claude\hooks\"
 ```
 
-### 2. Commandes (par projet)
+### 2. Configurer la statusline
 
 ```powershell
-# Dans votre projet
-New-Item -ItemType Directory -Force -Path ".claude\commands"
-Copy-Item .\commands\*.md ".claude\commands\"
+# Copier la statusline
+Copy-Item .\hooks\statusline.ps1 "$env:USERPROFILE\.claude\statusline.ps1"
 ```
 
-### 3. Skills (par projet ou global)
+### 3. Copier les commandes
 
 ```powershell
-# Par projet
-New-Item -ItemType Directory -Force -Path ".claude\skills"
-Copy-Item -Recurse .\skills\* ".claude\skills\"
-
-# OU global (tous les projets)
-Copy-Item -Recurse .\skills\* "$env:USERPROFILE\.claude\skills\"
+# Copier dans le dossier .claude/commands de votre projet
+Copy-Item .\commands\*.md "VOTRE_PROJET\.claude\commands\"
 ```
 
-### 4. Configuration
+### 4. Configurer settings.json
 
-Fusionner `settings-template.json` dans `~/.claude/settings.json`
+Ajouter ou fusionner le contenu de `settings-template.json` dans `~/.claude/settings.json`
 
-## Skills Disponibles
+## Hooks disponibles
 
-### agent-browser
+### Stop (NOUVEAU - Proactif)
+Se déclenche à la fin de chaque réponse.
+- **Lit le niveau de contexte** depuis `context-level.txt`
+- **Si >= 90%** → Alerte critique demandant `/update` + `/compact`
+- **Si < 90%** → Rappel standard léger
+- **Seuil configurable** dans le script (variable `$threshold`)
 
-Automatisation de navigateur pour les agents IA utilisant Vercel Agent Browser CLI.
+### PreCompact
+Se déclenche automatiquement quand le contexte atteint 100%.
+- Rappelle d'exécuter `/update` et `/followup_doctor`
+- Assure la sauvegarde des données avant compactage
 
-**Caracteristiques:**
-- Taux de reussite 95% (vs 75-80% pour Playwright MCP)
-- Systeme de references (`@e1`, `@e2`) pour interactions deterministes
-- Optimise pour Windows via WSL
+### SessionStart
+Se déclenche au démarrage ou à la reprise d'une session.
+- Rappelle d'exécuter `/followup` pour reprendre le contexte
+- Rappelle le workflow iterate-test-fix si actif
 
-**Usage rapide:**
-```bash
-wsl -d Ubuntu -- npx agent-browser open <url>
-wsl -d Ubuntu -- npx agent-browser snapshot -i
-wsl -d Ubuntu -- npx agent-browser click @e1
-wsl -d Ubuntu -- npx agent-browser close
+## Statusline
+
+La statusline affiche en temps réel:
+```
+Claude Opus 4.5 | Context: [##########----------] 44%
 ```
 
-Voir [skills/agent-browser/DOCUMENTATION.md](skills/agent-browser/DOCUMENTATION.md) pour l'installation complete.
+Elle écrit également le pourcentage dans `~/.claude/context-level.txt` pour permettre au hook Stop de le lire.
 
-## Commandes
+## Commandes disponibles
 
-| Commande | Description |
-|----------|-------------|
-| `/update` | Synchronise Archon MCP et project-state.xml |
-| `/followup` | Affiche l'etat actuel du projet |
-| `/followup_doctor` | Diagnostic de coherence complet |
+### /update
+Synchronise l'état du projet entre Archon MCP et project-state.xml.
 
-## Sequence Auto-Context
+### /followup
+Affiche l'état actuel du projet (tâches, événements, milestones).
 
-Quand le contexte atteint sa limite :
+### /followup_doctor
+Diagnostic complet de cohérence Archon/XML.
 
+## Séquence Auto-Context Management
+
+### AVANT (Réactif - trop tard)
 ```
-1. PreCompact hook -> Rappel /update + /followup_doctor
-2. Compactage automatique
-3. SessionStart hook -> Rappel /followup
+Contexte 100% → PreCompact → Alerte → Compactage → Perte potentielle
 ```
 
-## Configuration Requise
+### APRÈS (Proactif - nouveau système)
+```
+Chaque réponse → Stop hook lit context-level.txt
+    │
+    ├─ < 90% → Message standard
+    │
+    └─ >= 90% → ALERTE CRITIQUE
+                   │
+                   └─ Utilisateur fait /update + /compact
+                      AVANT d'atteindre 100%
+```
 
-- Claude Code CLI avec support hooks
+## Configuration requise
+
+- Claude Code avec support des hooks
 - PowerShell (Windows)
-- WSL Ubuntu (pour agent-browser)
-- Archon MCP Server (optionnel mais recommande)
-- Fichier project-state.xml dans votre projet
+- Archon MCP Server configuré (optionnel)
+- Fichier project-state.xml dans votre projet (optionnel)
 
 ## Personnalisation
 
-Dans les fichiers `commands/*.md`, remplacez :
-- `YOUR_PROJECT_ID` -> Votre Archon Project ID
-- `YOUR_PROJECT_PATH` -> Chemin vers votre projet
+### Modifier le seuil d'alerte
 
-## Archive
+Dans `hooks/stop-handler.ps1`, modifiez la variable:
+```powershell
+$threshold = 90  # Changez pour 80, 85, etc.
+```
 
-Les anciens workflows BMAD (session-continue, auto-clear) sont dans `_archive/`.
+### Modifier le Project ID Archon
+
+Dans les fichiers commands/*.md, remplacez l'UUID par votre propre Project ID Archon.
 
 ## License
 

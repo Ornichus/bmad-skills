@@ -1,11 +1,15 @@
 {
+  "statusLine": {
+    "type": "command",
+    "command": "powershell -ExecutionPolicy Bypass -File %USERPROFILE%\\.claude\\statusline.ps1"
+  },
   "hooks": {
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -ExecutionPolicy Bypass -Command \"Write-Output '{\\\"continue\\\": true, \\\"systemMessage\\\": \\\"RAPPEL: Pensez a /update si des changements significatifs ont ete faits.\\\"}'\"'",
+            "command": "powershell -ExecutionPolicy Bypass -File %USERPROFILE%\\.claude\\hooks\\stop-handler.ps1",
             "timeout": 10
           }
         ]
