@@ -38,6 +38,8 @@ claude-code-skills/
 │   ├── update.md                # /update - Synchronise Archon MCP
 │   ├── followup.md              # /followup - Affiche l'état du projet
 │   └── followup_doctor.md       # /followup_doctor - Diagnostic
+├── docs/                        # Documentation additionnelle
+│   └── AGENT-BROWSER-WINDOWS-WSL.md  # Config agent-browser Windows/WSL
 ├── settings-template.json       # Template de configuration hooks
 └── README.md
 ```
@@ -149,6 +151,28 @@ $threshold = 90  # Changez pour 80, 85, etc.
 ### Modifier le Project ID Archon
 
 Dans les fichiers commands/*.md, remplacez l'UUID par votre propre Project ID Archon.
+
+## Integration Ralphy
+
+Ces skills sont compatibles avec [Ralphy](https://github.com/michaelshimeles/ralphy) pour l'execution autonome de taches.
+
+### Agent-Browser sur Windows/WSL
+
+Pour utiliser `ralphy --browser` sur Windows avec agent-browser dans WSL:
+
+```powershell
+# Voir la documentation complete
+docs/AGENT-BROWSER-WINDOWS-WSL.md
+```
+
+**Resume rapide:**
+1. Installer agent-browser dans WSL: `wsl -d Ubuntu -- npm install -g agent-browser`
+2. Creer un wrapper `C:\Users\<USER>\bin\agent-browser.cmd`:
+   ```batch
+   @echo off
+   wsl.exe -d Ubuntu -- npx agent-browser %*
+   ```
+3. Tester: `agent-browser --version`
 
 ## License
 
