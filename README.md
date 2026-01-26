@@ -37,7 +37,8 @@ claude-code-skills/
 ├── commands/                    # Slash commands personnalisées
 │   ├── update.md                # /update - Synchronise Archon MCP
 │   ├── followup.md              # /followup - Affiche l'état du projet
-│   └── followup_doctor.md       # /followup_doctor - Diagnostic
+│   ├── followup_doctor.md       # /followup_doctor - Diagnostic
+│   └── setup-agent-browser.md   # /setup-agent-browser - Config Ralphy+WSL
 ├── docs/                        # Documentation additionnelle
 │   └── AGENT-BROWSER-WINDOWS-WSL.md  # Config agent-browser Windows/WSL
 ├── settings-template.json       # Template de configuration hooks
@@ -112,6 +113,10 @@ Affiche l'état actuel du projet (tâches, événements, milestones).
 
 ### /followup_doctor
 Diagnostic complet de cohérence Archon/XML.
+
+### /setup-agent-browser
+Configure agent-browser (Vercel) pour fonctionner avec Ralphy sur Windows/WSL.
+Crée les wrappers nécessaires et vérifie l'installation.
 
 ## Séquence Auto-Context Management
 
