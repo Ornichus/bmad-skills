@@ -32,9 +32,28 @@ wsl.exe -d Ubuntu -- npx agent-browser --version
 # Devrait afficher: agent-browser 0.7.x
 ```
 
-### 3. Creer le wrapper Windows
+### 3. Creer les wrappers (IMPORTANT: 2 fichiers necessaires)
 
-Creer le fichier `C:\Users\<USERNAME>\bin\agent-browser.cmd`:
+Ralphy utilise **Git Bash** (`/usr/bin/bash`), pas cmd.exe. Il faut donc **deux wrappers**.
+
+#### Wrapper Bash (pour Ralphy/Git Bash)
+
+Creer `C:\Users\<USERNAME>\bin\agent-browser` (sans extension):
+
+```bash
+#!/bin/bash
+# Wrapper agent-browser pour Git Bash -> WSL
+wsl.exe -d Ubuntu -- npx agent-browser "$@"
+```
+
+Rendre executable:
+```bash
+chmod +x /c/Users/<USERNAME>/bin/agent-browser
+```
+
+#### Wrapper CMD (pour PowerShell/cmd.exe)
+
+Creer `C:\Users\<USERNAME>\bin\agent-browser.cmd`:
 
 ```batch
 @echo off
@@ -73,22 +92,38 @@ agent-browser close
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Windows                                                    │
-│  ┌─────────────┐     ┌─────────────────────────────────┐   │
-│  │   Ralphy    │────►│  agent-browser.cmd              │   │
-│  │  --browser  │     │  wsl.exe -d Ubuntu -- npx ...   │   │
-│  └─────────────┘     └───────────────┬─────────────────┘   │
-│                                      │                      │
-├──────────────────────────────────────┼──────────────────────┤
-│  WSL Ubuntu                          ▼                      │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │  npx agent-browser                                   │   │
-│  │  └── Chromium headless                              │   │
-│  │      └── Screenshots, Interactions, Snapshots       │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│  Windows                                                       │
+│                                                                │
+│  ┌─────────────┐                                               │
+│  │   Ralphy    │  ralphy --browser "task"                      │
+│  │  --browser  │                                               │
+│  └──────┬──────┘                                               │
+│         │                                                      │
+│         ▼                                                      │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  Claude Code utilise /usr/bin/bash (Git Bash)           │  │
+│  └──────┬──────────────────────────────────────────────────┘  │
+│         │                                                      │
+│         ▼                                                      │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  C:\Users\<USER>\bin\agent-browser  (script bash)       │  │
+│  │  #!/bin/bash                                            │  │
+│  │  wsl.exe -d Ubuntu -- npx agent-browser "$@"            │  │
+│  └──────┬──────────────────────────────────────────────────┘  │
+│         │                                                      │
+├─────────┼──────────────────────────────────────────────────────┤
+│  WSL Ubuntu                                                    │
+│         ▼                                                      │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │  npx agent-browser 0.7.x                                │  │
+│  │  └── Chromium headless                                  │  │
+│  │      └── Screenshots, Interactions, Snapshots           │  │
+│  └─────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────┘
 ```
+
+**Note**: Le wrapper `.cmd` est pour PowerShell/cmd.exe direct, le script bash (sans extension) est pour Ralphy qui utilise Git Bash.
 
 ## Commandes agent-browser
 
@@ -114,14 +149,33 @@ agent-browser --version  # Doit retourner la version
 
 ## Depannage
 
-### "agent-browser not found"
+### "/usr/bin/bash: agent-browser: command not found" (Ralphy)
+
+Cette erreur signifie que Ralphy utilise Git Bash mais ne trouve que le wrapper `.cmd`.
+
+**Solution**: Creer le script bash (sans extension):
+```bash
+# Creer le fichier
+cat > /c/Users/$USER/bin/agent-browser << 'EOF'
+#!/bin/bash
+wsl.exe -d Ubuntu -- npx agent-browser "$@"
+EOF
+
+# Rendre executable
+chmod +x /c/Users/$USER/bin/agent-browser
+
+# Tester
+agent-browser --version
+```
+
+### "agent-browser not found" (PowerShell/cmd)
 
 1. Verifier l'installation WSL:
    ```bash
    wsl.exe -d Ubuntu -- npx agent-browser --version
    ```
 
-2. Verifier le wrapper:
+2. Verifier le wrapper .cmd:
    ```powershell
    Get-Content "$env:USERPROFILE\bin\agent-browser.cmd"
    ```
@@ -153,6 +207,23 @@ wsl.exe -d Ubuntu -- npx agent-browser screenshot /tmp/capture.png
 
 # Copier vers Windows
 wsl.exe -d Ubuntu -- cp /tmp/capture.png /mnt/c/Users/<USERNAME>/Desktop/
+```
+
+## Verification rapide
+
+Tester les deux environnements:
+
+```bash
+# Test Git Bash (utilise par Ralphy)
+which agent-browser
+agent-browser --version
+
+# Test PowerShell
+powershell.exe -Command "agent-browser --version"
+
+# Test Ralphy complet
+ralphy --browser --dry-run "test task"
+# Doit afficher: [INFO] Browser automation enabled (agent-browser)
 ```
 
 ## References
