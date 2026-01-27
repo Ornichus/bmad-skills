@@ -36,9 +36,26 @@ wsl.exe -d Ubuntu -- npx agent-browser --version
 
 Ralphy utilise **Git Bash** (`/usr/bin/bash`), pas cmd.exe. Il faut donc **deux wrappers**.
 
-#### Wrapper Bash (pour Ralphy/Git Bash)
+> **CRITIQUE - Choix du dossier**: Ralphy (via Bun) utilise `where agent-browser` pour detecter
+> l'outil. `where` ne cherche que dans le **PATH Windows natif**. Le dossier `~/bin` est visible
+> par Git Bash mais souvent **absent du PATH Windows**. Utilisez un dossier deja dans le PATH
+> Windows comme `C:\Users\<USERNAME>\.local\bin`.
 
-Creer `C:\Users\<USERNAME>\bin\agent-browser` (sans extension):
+#### Verifier quel dossier utiliser
+
+```powershell
+# Lister les dossiers "bin" deja dans le PATH Windows
+[Environment]::GetEnvironmentVariable('PATH', 'User') -split ';' | Where-Object { $_ -match 'bin' }
+
+# Resultat typique:
+# C:\Users\<USERNAME>\.local\bin    ← PREFERE (deja dans PATH Windows)
+# C:\Users\<USERNAME>\.cargo\bin
+# C:\Users\<USERNAME>\.bun\bin
+```
+
+#### Wrapper Bash (pour Ralphy/Git Bash/Claude Code)
+
+Creer `C:\Users\<USERNAME>\.local\bin\agent-browser` (sans extension):
 
 ```bash
 #!/bin/bash
@@ -48,12 +65,12 @@ wsl.exe -d Ubuntu -- npx agent-browser "$@"
 
 Rendre executable:
 ```bash
-chmod +x /c/Users/<USERNAME>/bin/agent-browser
+chmod +x "$HOME/.local/bin/agent-browser"
 ```
 
 #### Wrapper CMD (pour PowerShell/cmd.exe)
 
-Creer `C:\Users\<USERNAME>\bin\agent-browser.cmd`:
+Creer `C:\Users\<USERNAME>\.local\bin\agent-browser.cmd`:
 
 ```batch
 @echo off
@@ -62,20 +79,19 @@ wsl.exe -d Ubuntu -- npx agent-browser %*
 
 > **Important**: Utiliser `wsl.exe` (pas `wsl`) pour la compatibilite.
 
-### 4. Verifier que le dossier bin est dans le PATH
+### 4. Verifier la detection par Ralphy
+
+Ralphy utilise `where agent-browser` (via Bun/Node.js `execSync`) pour detecter l'outil.
+Ce check doit reussir sinon le flag `--browser` est ignore silencieusement.
 
 ```powershell
-$env:PATH -split ';' | Where-Object { $_ -match 'bin' }
-```
+# Ce test simule exactement ce que Ralphy fait
+where.exe agent-browser
+# Doit afficher le chemin vers le wrapper
 
-Si `C:\Users\<USERNAME>\bin` n'est pas dans le PATH:
-
-```powershell
-[Environment]::SetEnvironmentVariable(
-    "PATH",
-    "$env:PATH;$env:USERPROFILE\bin",
-    "User"
-)
+# Si "not found", le dossier n'est pas dans le PATH Windows natif
+# Verifier avec:
+[Environment]::GetEnvironmentVariable('PATH', 'User') -split ';'
 ```
 
 ### 5. Tester
@@ -199,15 +215,42 @@ agent-browser --version
 
 ### Problemes de chemins Windows/WSL
 
-Pour les screenshots, utiliser des chemins WSL puis copier:
+Git Bash convertit automatiquement les chemins (`/c/Users/...` → `C:\Users\...`).
+Cela peut casser les arguments passes a WSL. Utiliser `MSYS_NO_PATHCONV=1` si necessaire:
+
+```bash
+# Si les chemins sont mal convertis
+MSYS_NO_PATHCONV=1 agent-browser screenshot ./capture.png
+```
+
+Pour les screenshots via WSL, utiliser des chemins WSL puis copier:
 
 ```bash
 # Sauvegarder dans WSL
 wsl.exe -d Ubuntu -- npx agent-browser screenshot /tmp/capture.png
 
 # Copier vers Windows
-wsl.exe -d Ubuntu -- cp /tmp/capture.png /mnt/c/Users/<USERNAME>/Desktop/
+wsl.exe -d Ubuntu -- bash -c "cp /tmp/capture.png /mnt/c/Users/<USERNAME>/Desktop/"
 ```
+
+### Ralphy affiche WARNING malgre l'installation
+
+```
+[WARN] --browser flag used but agent-browser CLI not found
+```
+
+Cette erreur signifie que Ralphy (Bun) ne trouve pas `agent-browser` via `where`.
+
+**Cause**: Le code source de Ralphy (`execution/browser.ts`) fait:
+```typescript
+const checkCommand = isWindows ? "where agent-browser" : "which agent-browser";
+execSync(checkCommand, { stdio: "ignore" });
+```
+
+**Solution**: Les wrappers doivent etre dans un dossier present dans le **PATH Windows natif**
+(pas seulement Git Bash). Verifier avec `where.exe agent-browser` dans PowerShell.
+
+Le dossier recommande est `C:\Users\<USERNAME>\.local\bin` (generalement deja dans le PATH).
 
 ## Verification rapide
 

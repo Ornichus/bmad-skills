@@ -2,7 +2,12 @@
 
 ## Contexte
 
-Ralphy avec `--browser` necessite agent-browser de Vercel. Sur Windows, agent-browser s'execute dans WSL Ubuntu mais Ralphy utilise Git Bash (`/usr/bin/bash`). Il faut creer des wrappers pour faire le pont.
+Ralphy avec `--browser` necessite agent-browser de Vercel. Sur Windows, il y a deux obstacles:
+1. **agent-browser** s'execute dans **WSL Ubuntu**, pas Windows
+2. **Ralphy** (Bun) detecte l'outil via `where agent-browser` (PATH Windows natif)
+3. **Claude Code** execute les commandes via **Git Bash** (`/usr/bin/bash`)
+
+Il faut creer des wrappers dans un dossier present dans le PATH Windows **natif** (ex: `.local/bin`).
 
 ## Instructions
 
@@ -25,51 +30,48 @@ wsl.exe -d Ubuntu -- npm install -g agent-browser
 wsl.exe -d Ubuntu -- npx agent-browser install
 ```
 
-### 3. Creer le dossier bin utilisateur (si necessaire)
+### 3. Trouver le dossier cible (dans le PATH Windows natif)
 
-```bash
-mkdir -p ~/bin
-# Ou sur Windows: mkdir -p /c/Users/$USER/bin
+```powershell
+# Lister les dossiers bin deja dans le PATH Windows
+[Environment]::GetEnvironmentVariable('PATH', 'User') -split ';' | Where-Object { $_ -match 'bin' }
+# Choisir un dossier existant, ex: C:\Users\<USERNAME>\.local\bin
 ```
 
-### 4. Creer le wrapper Bash (CRITIQUE pour Ralphy)
-
-Creer le fichier `C:\Users\<USERNAME>\bin\agent-browser` (sans extension):
-
 ```bash
-#!/bin/bash
-# Wrapper agent-browser pour Git Bash -> WSL
-wsl.exe -d Ubuntu -- npx agent-browser "$@"
+# Creer le dossier si necessaire
+mkdir -p "$HOME/.local/bin"
 ```
 
-Commande pour creer:
+> **IMPORTANT**: Ne PAS utiliser `~/bin` seul. Ce dossier est visible par Git Bash
+> mais souvent absent du PATH Windows natif. Ralphy utilise `where agent-browser`
+> via Bun qui ne voit que le PATH Windows.
+
+### 4. Creer le wrapper Bash (CRITIQUE pour Ralphy/Claude Code)
+
 ```bash
-cat > /c/Users/$USER/bin/agent-browser << 'EOF'
+cat > "$HOME/.local/bin/agent-browser" << 'EOF'
 #!/bin/bash
 wsl.exe -d Ubuntu -- npx agent-browser "$@"
 EOF
-chmod +x /c/Users/$USER/bin/agent-browser
+chmod +x "$HOME/.local/bin/agent-browser"
 ```
 
 ### 5. Creer le wrapper CMD (pour PowerShell)
 
-Creer le fichier `C:\Users\<USERNAME>\bin\agent-browser.cmd`:
-
-```batch
+```bash
+cat > "$HOME/.local/bin/agent-browser.cmd" << 'EOF'
 @echo off
 wsl.exe -d Ubuntu -- npx agent-browser %*
+EOF
 ```
 
-### 6. Verifier le PATH
-
-S'assurer que `C:\Users\<USERNAME>\bin` est dans le PATH Windows.
+### 6. Verifier la detection par Ralphy
 
 ```powershell
-# Verifier
-$env:PATH -split ';' | Where-Object { $_ -match 'bin' }
-
-# Ajouter si necessaire
-[Environment]::SetEnvironmentVariable("PATH", "$env:PATH;$env:USERPROFILE\bin", "User")
+# Simuler exactement ce que Ralphy fait (execution/browser.ts)
+where.exe agent-browser
+# DOIT afficher le chemin. Si "not found" → le dossier n'est pas dans le PATH Windows
 ```
 
 ### 7. Tests de validation
