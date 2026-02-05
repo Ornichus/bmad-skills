@@ -1,183 +1,63 @@
-# Claude Code Skills & Hooks
+# BMAD Skills
 
-Collection de skills (commandes) et hooks personnalisés pour Claude Code, optimisés pour la gestion de projet avec Archon MCP.
-
-## Architecture du Système de Contexte
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    FLUX DE DONNÉES                          │
-├─────────────────────────────────────────────────────────────┤
-│  Claude Code API                                            │
-│       │                                                     │
-│       ▼                                                     │
-│  statusline.ps1 ──► context-level.txt (ex: "44")           │
-│       │                     │                               │
-│       ▼                     ▼                               │
-│  [Affichage]         stop-handler.ps1                       │
-│  "Model | Context:         │                                │
-│   [########----] 44%"      ▼                                │
-│                      Si >= 90% ?                            │
-│                      ├─ NON → Message standard              │
-│                      └─ OUI → ALERTE CRITIQUE               │
-│                              "Faites /update + /compact"    │
-└─────────────────────────────────────────────────────────────┘
-```
+Centre névralgique pour les agents Claude Code - workflows, commandes, skills et configurations.
 
 ## Structure
 
 ```
-claude-code-skills/
-├── hooks/                       # Scripts PowerShell pour hooks Claude Code
-│   ├── statusline.ps1           # Affichage + écrit context-level.txt
-│   ├── stop-handler.ps1         # Alerte conditionnelle selon % contexte
-│   ├── precompact-handler.ps1   # Handler pour PreCompact (100%)
-│   ├── session-start-handler.ps1  # Handler pour SessionStart
-│   └── context-manager.ps1      # (Legacy) Gestionnaire centralisé
-├── commands/                    # Slash commands personnalisées
-│   ├── update.md                # /update - Synchronise Archon MCP
-│   ├── followup.md              # /followup - Affiche l'état du projet
-│   ├── followup_doctor.md       # /followup_doctor - Diagnostic
-│   └── setup-agent-browser.md   # /setup-agent-browser - Config Ralphy+WSL
-├── docs/                        # Documentation additionnelle
-│   └── AGENT-BROWSER-WINDOWS-WSL.md  # Config agent-browser Windows/WSL
-├── settings-template.json       # Template de configuration hooks
-└── README.md
+bmad-skills/
+├── .claude/commands/        # Commandes slash installées
+├── _bmad/                   # BMAD Framework
+│   ├── bmb/                 # Module Builder (agents, modules, workflows)
+│   ├── bmm/                 # BMAD Method (PRD, stories, sprints)
+│   ├── cis/                 # Creative & Innovation Skills
+│   ├── tea/                 # Testing & Automation
+│   └── core/                # Configuration et manifests
+├── _bmad-output/            # Artifacts générés
+├── Worktable/               # Zone de travail (en développement)
+│   └── claude-code-skills/  # Hooks & Skills Claude Code
+└── CLAUDE.md                # Instructions pour Claude
 ```
 
-## Installation
+## Utilisation
 
-### 1. Copier les hooks
+### Installation rapide
 
-```powershell
-# Créer le dossier hooks
-New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\hooks"
+```bash
+# Cloner le repo
+git clone https://github.com/Ornichus/bmad-skills.git
 
-# Copier les scripts
-Copy-Item .\hooks\*.ps1 "$env:USERPROFILE\.claude\hooks\"
+# Copier les commandes vers votre projet
+cp -r bmad-skills/.claude/commands/ VOTRE_PROJET/.claude/commands/
 ```
 
-### 2. Configurer la statusline
+### Commandes disponibles
 
-```powershell
-# Copier la statusline
-Copy-Item .\hooks\statusline.ps1 "$env:USERPROFILE\.claude\statusline.ps1"
-```
+| Catégorie | Préfixe | Description |
+|-----------|---------|-------------|
+| **Agents BMAD** | `/bmad-agent-*` | Invoquer des agents spécialisés |
+| **Builder** | `/bmad-bmb-*` | Créer/éditer agents, modules, workflows |
+| **Method** | `/bmad-bmm-*` | PRD, stories, sprints, reviews |
+| **Creative** | `/bmad-cis-*` | Brainstorming, storytelling, innovation |
+| **Testing** | `/bmad-tea-*` | Test architecture et automatisation |
 
-### 3. Copier les commandes
+## Worktable
 
-```powershell
-# Copier dans le dossier .claude/commands de votre projet
-Copy-Item .\commands\*.md "VOTRE_PROJET\.claude\commands\"
-```
+Le dossier `Worktable/` contient des éléments **en cours de développement** :
 
-### 4. Configurer settings.json
+- **claude-code-skills/** - Hooks et skills pour Claude Code (statusline, alertes contexte, etc.)
 
-Ajouter ou fusionner le contenu de `settings-template.json` dans `~/.claude/settings.json`
+Ces éléments ne sont pas encore matures et seront intégrés proprement après validation.
 
-## Hooks disponibles
+## Documentation
 
-### Stop (NOUVEAU - Proactif)
-Se déclenche à la fin de chaque réponse.
-- **Lit le niveau de contexte** depuis `context-level.txt`
-- **Si >= 90%** → Alerte critique demandant `/update` + `/compact`
-- **Si < 90%** → Rappel standard léger
-- **Seuil configurable** dans le script (variable `$threshold`)
+Voir [CLAUDE.md](CLAUDE.md) pour les instructions détaillées destinées aux agents Claude.
 
-### PreCompact
-Se déclenche automatiquement quand le contexte atteint 100%.
-- Rappelle d'exécuter `/update` et `/followup_doctor`
-- Assure la sauvegarde des données avant compactage
+## Prérequis
 
-### SessionStart
-Se déclenche au démarrage ou à la reprise d'une session.
-- Rappelle d'exécuter `/followup` pour reprendre le contexte
-- Rappelle le workflow iterate-test-fix si actif
-
-## Statusline
-
-La statusline affiche en temps réel:
-```
-Claude Opus 4.5 | Context: [##########----------] 44%
-```
-
-Elle écrit également le pourcentage dans `~/.claude/context-level.txt` pour permettre au hook Stop de le lire.
-
-## Commandes disponibles
-
-### /update
-Synchronise l'état du projet entre Archon MCP et project-state.xml.
-
-### /followup
-Affiche l'état actuel du projet (tâches, événements, milestones).
-
-### /followup_doctor
-Diagnostic complet de cohérence Archon/XML.
-
-### /setup-agent-browser
-Configure agent-browser (Vercel) pour fonctionner avec Ralphy sur Windows/WSL.
-Crée les wrappers nécessaires et vérifie l'installation.
-
-## Séquence Auto-Context Management
-
-### AVANT (Réactif - trop tard)
-```
-Contexte 100% → PreCompact → Alerte → Compactage → Perte potentielle
-```
-
-### APRÈS (Proactif - nouveau système)
-```
-Chaque réponse → Stop hook lit context-level.txt
-    │
-    ├─ < 90% → Message standard
-    │
-    └─ >= 90% → ALERTE CRITIQUE
-                   │
-                   └─ Utilisateur fait /update + /compact
-                      AVANT d'atteindre 100%
-```
-
-## Configuration requise
-
-- Claude Code avec support des hooks
-- PowerShell (Windows)
-- Archon MCP Server configuré (optionnel)
-- Fichier project-state.xml dans votre projet (optionnel)
-
-## Personnalisation
-
-### Modifier le seuil d'alerte
-
-Dans `hooks/stop-handler.ps1`, modifiez la variable:
-```powershell
-$threshold = 90  # Changez pour 80, 85, etc.
-```
-
-### Modifier le Project ID Archon
-
-Dans les fichiers commands/*.md, remplacez l'UUID par votre propre Project ID Archon.
-
-## Integration Ralphy
-
-Ces skills sont compatibles avec [Ralphy](https://github.com/michaelshimeles/ralphy) pour l'execution autonome de taches.
-
-### Agent-Browser sur Windows/WSL
-
-Pour utiliser `ralphy --browser` sur Windows avec agent-browser dans WSL:
-
-```powershell
-# Voir la documentation complete
-docs/AGENT-BROWSER-WINDOWS-WSL.md
-```
-
-**Resume rapide:**
-1. Installer agent-browser dans WSL: `wsl -d Ubuntu -- npm install -g agent-browser`
-2. Creer un wrapper `C:\Users\<USER>\bin\agent-browser.cmd`:
-   ```batch
-   @echo off
-   wsl.exe -d Ubuntu -- npx agent-browser %*
-   ```
-3. Tester: `agent-browser --version`
+- Claude Code CLI
+- PowerShell (Windows) pour les hooks
+- [Archon MCP Server](https://github.com/anthropics/archon) (optionnel)
 
 ## License
 
