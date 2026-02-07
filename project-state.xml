@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-state>
+  <metadata>
+    <project-name>BMAD Skills</project-name>
+    <project-id>9d52fe50-d47c-42f5-9081-f922b6845ba9</project-id>
+    <created>2026-02-05T21:41:57Z</created>
+    <last-updated>2026-02-07T21:34:00Z</last-updated>
+    <session-id>session-003</session-id>
+  </metadata>
+
+  <current-objective>
+    <name>Amelioration skills Claude Code</name>
+    <status>in-progress</status>
+    <description>Ameliorer les skills et commandes du repo BMAD Skills, notamment /update avec capture de conversation.</description>
+  </current-objective>
+
+  <tasks>
+    <task id="1" status="done">Initialiser le repo git</task>
+    <task id="2" status="done">Creer la structure Worktable</task>
+    <task id="3" status="done">Deplacer claude-code-skills vers Worktable</task>
+    <task id="4" status="done">Creer le repo Orni-Skills</task>
+    <task id="5" status="done">Pousser les skills vers Orni-Skills</task>
+    <task id="6" status="done">Ajouter AGENT-BRIEFING et SKILLS-INDEX a Orni-Skills</task>
+    <task id="7" status="done">Creer hook TTS Windows (say-project.ps1)</task>
+    <task id="8" status="done">Creer architecture signal/watcher TTS</task>
+    <task id="9" status="done">Configurer hook Stop global dans settings.json</task>
+    <task id="10" status="done">Pousser hooks TTS sur bmad-skills</task>
+    <task id="11" status="done">Ajouter capture last-conversation au skill /update</task>
+  </tasks>
+
+  <history>
+    <event date="2026-02-05T13:23:00Z">Git init sur BMAD Skills</event>
+    <event date="2026-02-05T13:25:00Z">Structure Worktable creee</event>
+    <event date="2026-02-05T15:57:00Z">Clone bmad-skills et deplacement vers Worktable</event>
+    <event date="2026-02-05T16:09:00Z">Repo restructure et pousse sur GitHub</event>
+    <event date="2026-02-05T16:24:00Z">Repo Orni-Skills cree et configure</event>
+    <event date="2026-02-05T20:49:00Z">Hooks retires d Orni-Skills</event>
+    <event date="2026-02-05T21:35:00Z">AGENT-BRIEFING et SKILLS-INDEX ajoutes</event>
+    <event date="2026-02-05T21:42:00Z">Projet Archon cree - ID 9d52fe50-d47c-42f5-9081-f922b6845ba9</event>
+    <event date="2026-02-06T22:00:00Z">Session 002 - Creation hooks TTS Windows</event>
+    <event date="2026-02-06T22:30:00Z">Tests TTS: System.Speech, SAPI COM, VBScript, mshta - seul SAPI direct fonctionne</event>
+    <event date="2026-02-06T22:45:00Z">Architecture signal/watcher validee (tts-task-done + tts-watcher)</event>
+    <event date="2026-02-06T23:00:00Z">Solution finale: say-project.ps1 + say.cmd dans ~/.claude/hooks/</event>
+    <event date="2026-02-06T23:10:00Z">Recherche comparative AgentVibes et cc-hooks</event>
+    <event date="2026-02-06T23:20:00Z">Config globale settings.json mise a jour avec hook Stop TTS</event>
+    <event date="2026-02-06T23:25:00Z">Hooks TTS pushes sur bmad-skills (master)</event>
+    <event date="2026-02-07T21:30:00Z">Session 003 - Amelioration skill /update avec capture conversation</event>
+    <event date="2026-02-07T21:34:00Z">Skill /update modifie: ajout etape 4 capture last-conversation (3 derniers messages)</event>
+  </history>
+
+  <completed-milestones>
+    <milestone date="2026-02-05">Separation BMAD / Orni-Skills</milestone>
+    <milestone date="2026-02-05">Repo Orni-Skills operationnel</milestone>
+    <milestone date="2026-02-06">Hook TTS Windows fonctionnel (say-project.ps1)</milestone>
+  </completed-milestones>
+
+  <last-conversation updated="2026-02-07T21:34:00Z">
+    <message role="user" index="1">Demande de modifier /update pour enregistrer les 3 derniers messages user/agent dans project-state.xml. Test prevu juste apres.</message>
+    <message role="assistant" index="2">Lecture de update.md et project-state.xml, puis modification: ajout etape 4 (capture last-conversation), section XML, format de sortie mis a jour.</message>
+    <message role="assistant" index="3">Confirmation des modifications effectuees: update.md (etape 4 + format) et project-state.xml (section last-conversation vide ajoutee). Propose de tester.</message>
+  </last-conversation>
+
+  <notes>
+    <note>Orni-Skills: https://github.com/Ornichus/Orni-Skills</note>
+    <note>BMAD Skills: https://github.com/Ornichus/bmad-skills</note>
+    <note>Hook TTS global: ~/.claude/hooks/say-project.ps1 (System.Speech.Synthesis)</note>
+    <note>Hook TTS backup: ~/.claude/hooks/say.cmd (version simple sans nom de projet)</note>
+    <note>Architecture watcher: tts-task-done.ps1 (signal) + tts-watcher.ps1 (lecteur)</note>
+    <note>Limitation Windows: TTS ne fonctionne pas via pipe sauf avec System.Speech direct</note>
+    <note>Refs: AgentVibes (Node.js/Piper), cc-hooks (Python/gTTS), notre solution (PowerShell/SAPI natif)</note>
+  </notes>
+</project-state>

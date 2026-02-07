@@ -24,9 +24,27 @@ Met à jour le suivi du projet dans Archon MCP et le fichier project-state.xml.
      - `<tasks>` statuts des sous-tâches
      - `<history>` ajouter les événements récents
      - `<completed-milestone>` si un milestone est terminé
+     - `<last-conversation>` avec les 3 derniers messages échangés (voir ci-dessous)
    - Sauvegarder les modifications
 
-4. **Confirmer** les mises à jour effectuées à l'utilisateur
+4. **Capturer les 3 derniers messages de la conversation:**
+   - Remonter dans le contexte de conversation actuel
+   - Identifier les 3 derniers messages échangés entre l'utilisateur et l'agent (AVANT l'appel à /update)
+   - Ne PAS inclure le message /update lui-même
+   - Écrire ces messages dans la section `<last-conversation>` du XML
+   - Format:
+     ```xml
+     <last-conversation updated="[ISO 8601 datetime]">
+       <message role="user|assistant" index="1">[Résumé concis du message - max 200 chars]</message>
+       <message role="user|assistant" index="2">[Résumé concis du message - max 200 chars]</message>
+       <message role="user|assistant" index="3">[Résumé concis du message - max 200 chars]</message>
+     </last-conversation>
+     ```
+   - Les messages sont ordonnés chronologiquement (1 = le plus ancien des 3, 3 = le plus récent)
+   - Résumer chaque message de façon concise mais fidèle (max 200 caractères)
+   - Si un message contient du code ou des résultats d'outils, résumer l'action et le résultat
+
+5. **Confirmer** les mises à jour effectuées à l'utilisateur
 
 ## Format de sortie
 
@@ -42,6 +60,7 @@ Met à jour le suivi du projet dans Archon MCP et le fichier project-state.xml.
 - [x] Objectif actuel: ...
 - [x] Événements ajoutés: ...
 - [x] Statuts mis à jour: ...
+- [x] Dernière conversation capturée (3 messages)
 
 ### Prochaines étapes
 - ...

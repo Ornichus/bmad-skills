@@ -2,6 +2,8 @@
 
 Centre névralgique pour les agents Claude - workflows, commandes et configurations.
 
+**Archon Project ID:** `9d52fe50-d47c-42f5-9081-f922b6845ba9`
+
 ## Structure du Repo
 
 ```
